@@ -46,7 +46,7 @@ help:
 	@echo ""
 	@echo "  Waves / housekeeping:"
 	@echo "    make waves [TEST=<name>] # dump FST(s) via --waves"
-	@echo "    make wave TEST=<name>    # dump then open in GTKWave"
+	@echo "    make wave [TEST=<name>]  # dump then open in GTKWave (default: random_test)"
 	@echo "    make clean               # remove build/sim/coverage artifacts"
 	@echo ""
 	@echo "  Vars: PYTHON=$(PYTHON)  TEST=<testcase>  ARGS=<extra pytest flags>"
@@ -105,15 +105,17 @@ waves:
 	$(PYTEST) $(FUNC) $(if $(TEST),-k $(TEST),) --waves $(ARGS)
 
 # Regenerate a fresh dump for one testcase and open it in GTKWave with the
-# curated layout. Skips cleanly if GTKWave is not installed.
+# curated layout. Skips cleanly if GTKWave is not installed. Defaults to the
+# random test when TEST is not given (`make wave`); override with TEST=<name>.
+WAVE_TEST := $(if $(TEST),$(TEST),random_test)
+
 wave:
-	@if [ -z "$(TEST)" ]; then echo "usage: make wave TEST=<testcase>"; exit 2; fi
-	$(PYTEST) $(FUNC) -k $(TEST) --waves $(ARGS)
+	$(PYTEST) $(FUNC) -k $(WAVE_TEST) --waves $(ARGS)
 	@if command -v gtkwave >/dev/null 2>&1; then \
-		echo "[WAVE] opening tests/sim_build/$(TEST)/apb_mem.fst"; \
-		exec gtkwave tests/sim_build/$(TEST)/apb_mem.fst tb/apb_mem.gtkw; \
+		echo "[WAVE] opening tests/sim_build/$(WAVE_TEST)/apb_mem.fst"; \
+		exec gtkwave tests/sim_build/$(WAVE_TEST)/apb_mem.fst tb/apb_mem.gtkw; \
 	else \
-		echo "[WAVE] gtkwave not on PATH — dump is at tests/sim_build/$(TEST)/apb_mem.fst"; \
+		echo "[WAVE] gtkwave not on PATH — dump is at tests/sim_build/$(WAVE_TEST)/apb_mem.fst"; \
 	fi
 
 # --- clean -------------------------------------------------------------------
