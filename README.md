@@ -330,8 +330,8 @@ weak SVA support).
 gtkwave tests/sim_build/random_test/apb_mem.fst tb/apb_mem.gtkw
 ```
 
-`make wave TEST=random_test` does both steps (dump then open) and skips cleanly
-if GTKWave is not installed.
+`make wave` does both steps (dump then open) — defaulting to the random test, or
+`make wave TEST=<name>` for another. It skips cleanly if GTKWave is not installed.
 
 ## CI
 
