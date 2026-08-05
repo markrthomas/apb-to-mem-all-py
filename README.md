@@ -45,6 +45,12 @@ Run pytest with that interpreter, e.g. `/usr/bin/python3 -m pytest`.
 
 ## `make` → `pytest` mapping
 
+An **optional** `Makefile` wrapper restores the familiar `make` verbs — each just
+shells out to the pytest command in the right column (nothing runs without
+pytest). Use it (`make test`, `make lint`, `make ci`, …; `make help` lists all)
+or call pytest directly, whichever you prefer. Override the interpreter with
+`make PYTHON=... <target>` and pass extra pytest flags via `ARGS="..."`.
+
 | Old Make target | pytest command |
 |---|---|
 | `make test` / `make test-all` | `pytest -m sim` |
