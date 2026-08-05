@@ -6,6 +6,76 @@ entirely by **pytest** instead of GNU Make. This repo is a derivative of
 low-power / lint / coverage / UVM deliverables — but the Makefile orchestration
 is replaced by pytest tests that call cocotb's Python runner API.
 
+## Architecture
+
+`apb_mem` is a zero-wait-state APB3 slave wrapping a byte-wide memory array
+(`2**ADDR_WIDTH` locations of `DATA_WIDTH` bits; default 32768 × 8-bit = 32K).
+`PREADY` is tied high so every transfer completes in the ACCESS phase and
+`PSLVERR` is tied low; writes are gated by `PRESETn`, and the array powers up
+all-zero so reads of un-written locations return 0.
+
+```mermaid
+flowchart LR
+    M["APB master<br/>(pyuvm driver / cocotb BFM)"]:::light
+
+    subgraph SL["apb_mem — APB3 slave, zero wait states"]
+        direction TB
+        REQ["Request decode<br/>PSEL · PENABLE · PWRITE · PADDR"]:::light
+        MEM["Memory array<br/>2**ADDR_WIDTH × DATA_WIDTH<br/>(32768 × 8-bit)"]:::accent
+        RSP["Response<br/>PRDATA · PREADY=1 · PSLVERR=0"]:::light
+        REQ --> MEM --> RSP
+    end
+
+    M -->|"PSEL · PENABLE · PWRITE · PADDR · PWDATA"| REQ
+    RSP -->|"PRDATA · PREADY"| M
+
+    classDef accent fill:#1F4E79,stroke:#14385A,color:#FFFFFF;
+    classDef light fill:#C9D4DF,stroke:#1F4E79,color:#1F4E79;
+    style SL fill:#EAF0F6,stroke:#C9D4DF,color:#1F4E79;
+```
+
+The testbench is a layered pyuvm environment; only the BFM touches DUT signals,
+and the scoreboard keeps a reference byte model that checks every read against
+the last write to that address. The bound `apb_sva` assertions run in the SV/UVM
+flow only.
+
+```mermaid
+flowchart TB
+    SEQ["Sequence<br/>write-read · random · walking"]:::accent
+
+    subgraph TEST["uvm_test — builds env, drives reset, starts the sequence"]
+        direction TB
+        subgraph ENV["uvm_env"]
+            direction TB
+            subgraph AGENT["uvm_agent (active)"]
+                direction TB
+                SEQR["Sequencer"]:::light
+                DRV["Driver"]:::light
+                MON["Monitor"]:::light
+            end
+            SB["Scoreboard<br/>reference byte model<br/>checks read == last write"]:::accent
+        end
+    end
+
+    IF["cocotb BFM<br/>(APB virtual interface)"]:::light
+    DUT["apb_mem<br/>(DUT)"]:::accent
+    SVA["apb_sva<br/>bound assertions<br/>(SV flow only)"]:::light
+
+    SEQ -->|"seq items"| SEQR
+    SEQR -->|"next item"| DRV
+    DRV -->|"drive SETUP / ACCESS"| IF
+    IF <-->|"PSEL · PENABLE · PWRITE · PADDR · PWDATA / PRDATA · PREADY"| DUT
+    IF -->|"sample completed transfer"| MON
+    MON -->|"analysis port"| SB
+    DUT -.->|"bind"| SVA
+
+    classDef accent fill:#1F4E79,stroke:#14385A,color:#FFFFFF;
+    classDef light fill:#C9D4DF,stroke:#1F4E79,color:#1F4E79;
+    style TEST fill:#EAF0F6,stroke:#C9D4DF,color:#1F4E79;
+    style ENV fill:#F4F8FB,stroke:#C9D4DF,color:#1F4E79;
+    style AGENT fill:#EAF0F6,stroke:#C9D4DF,color:#1F4E79;
+```
+
 ## Why pytest
 
 The source repo hand-rolled a `run_one_test` Make recipe to run **one cocotb
@@ -13,6 +83,45 @@ test per simulation** (the RTL only zeroes its array at time 0, so sharing a sim
 across tests causes a seed-dependent scoreboard flake). Pytest gives this for
 free: each test function calls `cocotb.runner` once, spawning its own `vvp`
 process with a fresh, time-0-zeroed memory. See `tests/_sim.py`.
+
+```mermaid
+flowchart LR
+    PT["pytest<br/>/usr/bin/python3 -m pytest"]:::accent
+
+    subgraph CONF["tests/conftest.py — env shim"]
+        direction TB
+        ENVP["ICARUS_BIN_DIR=/usr/bin<br/>drop VIRTUAL_ENV / PYTHONHOME<br/>PYGPI_PYTHON_BIN = sys.executable"]:::light
+    end
+
+    subgraph SIMT["sim / lp tests → tests/_sim.py"]
+        direction TB
+        RUN["run_cocotb()<br/>get_runner('icarus')"]:::accent
+        BUILD["runner.build()<br/>iverilog -g2012, 1ns/1ps"]:::light
+        VVP["runner.test()<br/>fresh vvp per testcase"]:::light
+        RUN --> BUILD --> VVP
+    end
+
+    TB["tb/apb_test.py (pyuvm)<br/>drives apb_mem via cocotb BFM"]:::light
+    XML["results.xml<br/>get_results() → assert 0 failed"]:::accent
+
+    subgraph GATES["gate tests (subprocess)"]
+        direction TB
+        LINT["test_lint<br/>iverilog + verilator"]:::light
+        COV["test_coverage<br/>verilator --coverage + floor"]:::light
+        UVM["test_uvm<br/>vcs / xrun / qrun (skips)"]:::light
+    end
+
+    PT --> CONF
+    PT --> SIMT
+    PT --> GATES
+    VVP --> TB --> XML
+
+    classDef accent fill:#1F4E79,stroke:#14385A,color:#FFFFFF;
+    classDef light fill:#C9D4DF,stroke:#1F4E79,color:#1F4E79;
+    style CONF fill:#EAF0F6,stroke:#C9D4DF,color:#1F4E79;
+    style SIMT fill:#EAF0F6,stroke:#C9D4DF,color:#1F4E79;
+    style GATES fill:#EAF0F6,stroke:#C9D4DF,color:#1F4E79;
+```
 
 ## Requirements
 
