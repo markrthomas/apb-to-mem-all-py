@@ -1,0 +1,35 @@
+[*]
+[*] GTKWave save file — apb_mem APB3 testbench signal layout
+[*] Opened by `make wave` on tb/sim_build/apb_mem.fst.
+[*]
+[timestart] 0
+[size] 1400 720
+[pos] -1 -1
+[treeopen] apb_mem.
+[sst_width] 250
+[signals_width] 240
+[sst_expanded] 1
+[sst_vpaned_height] 340
+@200
+-Clock / Reset
+@28
+apb_mem.PCLK
+apb_mem.PRESETn
+@200
+-APB request
+@28
+apb_mem.PSEL
+apb_mem.PENABLE
+apb_mem.PWRITE
+@22
+apb_mem.PADDR[14:0]
+apb_mem.PWDATA[7:0]
+@200
+-APB response
+@22
+apb_mem.PRDATA[7:0]
+@28
+apb_mem.PREADY
+apb_mem.PSLVERR
+[pattern_trace] 1
+[pattern_trace] 0

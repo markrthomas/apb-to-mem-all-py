@@ -1,0 +1,83 @@
+# =============================================================================
+# apb_mem.upf — IEEE 1801 (UPF) power intent for apb_mem_lp.
+#
+# GOLDEN power spec. None of this repo's simulators (Icarus, Verilator) are
+# UPF-aware, so this file is NOT executed by `make lp` — that target runs the
+# hand-modeled emulation in apb_mem_lp.sv / apb_mem_array.sv instead. Hand this
+# file to a UPF-aware tool to get real power-aware simulation:
+#
+#   VCS   (Synopsys):  vcs -sverilog -upf apb_mem.upf apb_mem_array.sv apb_mem_lp.sv ...
+#   Questa (Siemens):  vopt -pa_upf apb_mem.upf ... ; vsim -pa ...
+#   Xcelium (Cadence): xrun -sv -lps_upf apb_mem.upf ...
+#
+# Power architecture:
+#   PD_AON : always-on APB interface (top scope, minus the array)
+#   PD_MEM : switchable memory array (u_array) — gated supply VDD_MEM
+#            + isolation on its outputs + retention across power cycles
+# =============================================================================
+
+upf_version 3.0                          ;# IEEE 1801-2015
+
+set_scope apb_mem_lp
+
+# ---- Power domains ----------------------------------------------------------
+create_power_domain PD_AON                         ;# always-on interface
+create_power_domain PD_MEM -elements {u_array}     ;# switchable memory array
+
+# ---- Supply ports / nets ----------------------------------------------------
+create_supply_port VDD -direction in
+create_supply_port VSS -direction in
+
+create_supply_net VDD
+create_supply_net VSS
+create_supply_net VDD_MEM                          ;# switched output of mem_sw
+
+connect_supply_net VDD -ports VDD
+connect_supply_net VSS -ports VSS
+
+# Always-on domain runs straight off VDD/VSS; PD_MEM runs off the switched rail.
+set_domain_supply_net PD_AON -primary_power_net VDD     -primary_ground_net VSS
+set_domain_supply_net PD_MEM -primary_power_net VDD_MEM -primary_ground_net VSS
+
+# ---- Power switch (header switch feeding VDD_MEM) ---------------------------
+create_power_switch mem_sw \
+    -domain             PD_MEM \
+    -input_supply_port  {vin  VDD} \
+    -output_supply_port {vout VDD_MEM} \
+    -control_port       {sw_on pwr_on} \
+    -on_state           {on  vin {sw_on}} \
+    -off_state          {off      {!sw_on}}
+
+# ---- Isolation (clamp PD_MEM outputs to 0 while it is off) -------------------
+set_isolation mem_iso \
+    -domain               PD_MEM \
+    -isolation_power_net  VDD \
+    -isolation_ground_net VSS \
+    -clamp_value          0 \
+    -applies_to           outputs
+
+set_isolation_control mem_iso \
+    -domain           PD_MEM \
+    -isolation_signal iso_en \
+    -isolation_sense  high \
+    -location         parent
+
+# ---- Retention (hold the array contents across a power cycle) ----------------
+set_retention mem_ret \
+    -domain               PD_MEM \
+    -retention_power_net  VDD \
+    -retention_ground_net VSS
+
+set_retention_control mem_ret \
+    -domain         PD_MEM \
+    -save_signal    {ret high} \
+    -restore_signal {ret low}
+
+# ---- Port states + power-state table (PST) ---------------------------------
+add_port_state VDD     -state {ON  0.90}
+add_port_state VSS     -state {ON  0.00}
+add_port_state VDD_MEM -state {ON  0.90} -state {OFF off}
+
+create_pst apb_pst -supplies {VDD VDD_MEM VSS}
+add_pst_state nominal  -pst apb_pst -state {ON  ON  ON}   ;# memory powered
+add_pst_state mem_down -pst apb_pst -state {ON  OFF ON}   ;# memory gated off

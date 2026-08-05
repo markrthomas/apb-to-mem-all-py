@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Silence the "Python runners ... are an experimental feature" UserWarning that
+# cocotb.runner emits on import; the API is intentional here.
+filterwarnings = [
+    "ignore:Python runners and associated APIs are an experimental feature:UserWarning",
+]
+markers = [
+    "sim: cocotb/pyuvm functional tests (make test-all)",
+    "lp: low-power UPF-emulated power-cycle test (make lp)",
+    "lint: iverilog + verilator RTL lint (make lint)",
+    "coverage: verilator C++ coverage gate (make coverage)",
+    "uvm: license-gated SystemVerilog/UVM flow, self-skips (make uvm)",
+]

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# cocotb runner build/sim output
+tests/sim_build/
+sim_build/
+results*.xml
+
+# Verilator coverage artifacts
+sim/obj_dir_cov/
+sim/coverage.info
+sim/coverage.dat
+
+# Waveforms
+*.fst
+*.vcd
+
+# UVM simulator output (licensed hosts)
+uvm/simv
+uvm/simv.daidir/
+uvm/csrc/
+uvm/*.log
+uvm/xcelium.d/
+uvm/xrun.history
+uvm/work/
+uvm/transcript

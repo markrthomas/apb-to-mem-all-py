@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RTL tools (Icarus + Verilator)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog verilator
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python deps (cocotb + pyuvm + pytest)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Tool versions
+        run: |
+          iverilog -V | head -1
+          verilator --version
+          python -c "import cocotb, pyuvm, pytest; print('cocotb', cocotb.__version__, 'pyuvm', pyuvm.__version__, 'pytest', pytest.__version__)"
+
+      # Full DV gate: lint + functional regression + low-power + coverage, as a
+      # single pass/fail run. `uvm`-marked tests self-skip (GitHub runners have
+      # no UVM-capable simulator). apt Icarus lives at /usr/bin, so conftest's
+      # ICARUS_BIN_DIR default holds.
+      - name: pytest (make ci equivalent)
+        run: pytest -ra
+
+      - name: Upload coverage (lcov)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-info
+          path: sim/coverage.info
+          if-no-files-found: ignore
