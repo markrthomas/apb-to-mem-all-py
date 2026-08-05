@@ -17,6 +17,9 @@ sim/coverage.dat
 *.fst
 *.vcd
 
+# Personal / local scratch notes
+NOTES.md
+
 # UVM simulator output (licensed hosts)
 uvm/simv
 uvm/simv.daidir/
