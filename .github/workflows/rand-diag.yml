@@ -16,7 +16,8 @@ jobs:
         path: ${{ env.VERILATOR_PREFIX }}
         key: ${{ runner.os }}-verilator-v5.050-uvm
     - run: echo "$VERILATOR_PREFIX/bin" >> "$GITHUB_PATH"
-    - run: sudo apt-get update && sudo apt-get install -y ccache
+    - run: sudo apt-get update && sudo apt-get install -y ccache z3
+    - run: z3 --version
     - name: Build + run rand probe
       run: |
         U="$VERILATOR_PREFIX/uvm"
