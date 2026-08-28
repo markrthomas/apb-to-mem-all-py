@@ -1,0 +1,29 @@
+name: rand-diag
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'uvm/vlt/rand_probe.sv', '.github/workflows/rand-diag.yml' ]
+env:
+  VERILATOR_PREFIX: /home/runner/verilator-install
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cache Verilator install
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.VERILATOR_PREFIX }}
+        key: ${{ runner.os }}-verilator-v5.050-uvm
+    - run: echo "$VERILATOR_PREFIX/bin" >> "$GITHUB_PATH"
+    - run: sudo apt-get update && sudo apt-get install -y ccache
+    - name: Build + run rand probe
+      run: |
+        U="$VERILATOR_PREFIX/uvm"
+        verilator --binary --timing --vpi -j "$(nproc)" --build-jobs "$(nproc)" \
+          -Wno-fatal -Wno-COVERIGN -Wno-TIMESCALEMOD --CFLAGS -O0 \
+          --top-module rand_probe --Mdir obj_probe \
+          +incdir+uvm/vlt +incdir+"$U" \
+          "$U/uvm_pkg_all_v2020_3_1_dpi.svh" "$U/v2020_3_1/dpi/uvm_dpi.cc" \
+          uvm/vlt/rand_probe.sv
+        ./obj_probe/Vrand_probe +UVM_NO_RELNOTES | grep PROBE
