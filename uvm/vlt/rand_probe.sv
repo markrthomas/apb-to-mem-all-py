@@ -1,52 +1,42 @@
-// Diagnostic: isolate why item.randomize() fails on UVM objects under Verilator.
-// Tests several variants in one run. (First comment word avoids "verilator".)
+// Diagnostic round 2: pinpoint the inline-constraint randomize failure.
 `timescale 1ns/1ps
 module rand_probe;
   import uvm_pkg::*;
   `include "uvm_macros.svh"
 
-  // A) uvm_sequence_item + uvm_field automation (matches apb_seq_item exactly)
-  class si_field extends uvm_sequence_item;
-    rand bit [14:0] addr; rand bit [7:0] data; rand bit write;
-    `uvm_object_utils_begin(si_field)
-      `uvm_field_int(addr, UVM_ALL_ON)
-      `uvm_field_int(data, UVM_ALL_ON)
-      `uvm_field_int(write, UVM_ALL_ON)
-    `uvm_object_utils_end
-    function new(string n="si_field"); super.new(n); endfunction
+  // field named 'write' (collides with uvm_subscriber::write)
+  class si_write extends uvm_sequence_item;
+    rand bit [14:0] addr; rand bit write;
+    `uvm_object_utils(si_write)
+    function new(string n="si_write"); super.new(n); endfunction
   endclass
-
-  // B) uvm_sequence_item, NO field automation
-  class si_nofield extends uvm_sequence_item;
-    rand bit [14:0] addr; rand bit [7:0] data; rand bit write;
-    `uvm_object_utils(si_nofield)
-    function new(string n="si_nofield"); super.new(n); endfunction
+  // field renamed to 'dir' (no UVM collision)
+  class si_dir extends uvm_sequence_item;
+    rand bit [14:0] addr; rand bit dir;
+    `uvm_object_utils(si_dir)
+    function new(string n="si_dir"); super.new(n); endfunction
   endclass
-
-  // C) plain uvm_object with field automation
-  class obj_field extends uvm_object;
-    rand bit [14:0] addr; rand bit [7:0] data; rand bit write;
-    `uvm_object_utils_begin(obj_field)
-      `uvm_field_int(addr, UVM_ALL_ON)
-    `uvm_object_utils_end
-    function new(string n="obj_field"); super.new(n); endfunction
+  // class-level constraint instead of inline
+  class si_cls extends uvm_sequence_item;
+    rand bit [14:0] addr; rand bit write;
+    constraint c_wr { write == 1'b1; }
+    `uvm_object_utils(si_cls)
+    function new(string n="si_cls"); super.new(n); endfunction
   endclass
 
   initial begin
-    si_field   a = new();
-    si_nofield b = new();
-    obj_field  c = new();
+    si_write a = new(); si_dir b = new(); si_cls d = new();
     int r;
-    r=0; repeat(10) if (a.randomize() with { write==1'b1; }) r++;
-    $display("PROBE A si_field   with-constraint  ok=%0d/10", r);
-    r=0; repeat(10) if (a.randomize()) r++;
-    $display("PROBE A si_field   no-constraint    ok=%0d/10", r);
-    r=0; repeat(10) if (b.randomize() with { write==1'b1; }) r++;
-    $display("PROBE B si_nofield with-constraint  ok=%0d/10", r);
-    r=0; repeat(10) if (c.randomize() with { write==1'b1; }) r++;
-    $display("PROBE C obj_field  with-constraint  ok=%0d/10", r);
-    r=0; repeat(10) if (std::randomize(a.addr, a.data, a.write) with { a.write==1'b1; }) r++;
-    $display("PROBE D std::randomize(fields)      ok=%0d/10", r);
+    r=0; repeat(10) if (a.randomize() with { write == 1'b1; }) r++;
+    $display("PROBE E write  inline{write==1}      ok=%0d/10", r);
+    r=0; repeat(10) if (a.randomize() with { this.write == 1'b1; }) r++;
+    $display("PROBE F write  inline{this.write==1} ok=%0d/10", r);
+    r=0; repeat(10) if (b.randomize() with { dir == 1'b1; }) r++;
+    $display("PROBE G dir    inline{dir==1}        ok=%0d/10", r);
+    r=0; repeat(10) if (a.randomize() with { addr < 100; }) r++;
+    $display("PROBE H write  inline{addr<100}      ok=%0d/10", r);
+    r=0; repeat(10) if (d.randomize()) r++;
+    $display("PROBE I cls    class-constraint      ok=%0d/10", r);
     $finish;
   end
 endmodule
