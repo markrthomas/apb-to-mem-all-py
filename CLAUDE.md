@@ -99,3 +99,19 @@ still green.
   `UVM_TEST=<name> pytest -m uvm` picks the UVM test.
 - The `filterwarnings` entry in `pyproject.toml` silences cocotb's "experimental Python
   runner" `UserWarning` — the API use is intentional. Keep it.
+
+## UVM on open-source Verilator (`uvm/vlt`)
+
+License-free way to run this repo's UVM env under **Verilator 5.050** (no
+VCS/Xcelium/Questa), added 2026-08-28. **Passing** in CI
+(`.github/workflows/verilator-uvm.yml`): builds Verilator from source, installs
+**z3** (Verilator's SMT solver for `randomize()` — without it constrained
+randomize returns 0) + `ccache`, then lint + the `--binary` `write_read` smoke test.
+
+Local (lint is RAM-safe; the `--binary` build wants a big-RAM host or CI):
+```sh
+V=~/verilator/bin/verilator ; U=~/verilator/test_regress/t/uvm
+( unset VERILATOR_ROOT; make -C uvm/vlt lint   VERILATOR=$V UVM_HOME=$U )
+( unset VERILATOR_ROOT; make -C uvm/vlt write_read VERILATOR=$V UVM_HOME=$U )
+```
+Details: `uvm/vlt/README.md`.
