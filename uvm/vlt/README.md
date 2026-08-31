@@ -12,6 +12,10 @@ otherwise self-skips without a licensed UVM simulator.
 - **`unset VERILATOR_ROOT`** after sourcing the OSS CAD Suite env (a stale value
   makes `~/verilator` hard-error).
 - **`UVM_HOME`** = `~/verilator/test_regress/t/uvm`.
+- **In an OSS-off shell** (`OSS_CAD=0` at start, or `oss-cad-off`) `~/.bashrc`
+  already puts Verilator 5.050 on `PATH`, unsets `VERILATOR_ROOT`, and exports
+  `UVM_HOME` — so the explicit `VERILATOR=`/`UVM_HOME=` and `unset` below are
+  optional there.
 
 ## Usage
 ```sh
