@@ -18,6 +18,7 @@ FUNC   := tests/test_functional.py
 
 .PHONY: default help \
 	test test-all test-write-read test-random test-walking test-one \
+	sim cocotb \
 	lp lint coverage uvm check regress ci \
 	waves wave clean
 
@@ -32,6 +33,7 @@ help:
 	@echo "    make test-random         # single: constrained-random mix"
 	@echo "    make test-walking        # single: directed edge cases"
 	@echo "    make test-one TEST=<name># single: any cocotb testcase by name"
+	@echo "    make sim / cocotb        # standard cross-repo aliases for test (see DV_STANDARDS.md)"
 	@echo ""
 	@echo "  Other gates:"
 	@echo "    make lp                  # pytest -m lp  (low-power UPF demo)"
@@ -71,6 +73,12 @@ test-walking:
 test-one:
 	@if [ -z "$(TEST)" ]; then echo "usage: make test-one TEST=<testcase>"; exit 2; fi
 	$(PYTEST) $(FUNC) -k $(TEST) $(ARGS)
+
+# Cross-repo standard aliases (see DV_STANDARDS.md) — this repo's functional
+# tier is cocotb/pyuvm end to end, so both names just delegate to `test`.
+sim: test
+
+cocotb: test
 
 # --- other gates -------------------------------------------------------------
 

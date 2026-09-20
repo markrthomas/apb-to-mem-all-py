@@ -235,6 +235,9 @@ shells out to the pytest command in the right column (nothing runs without
 pytest). Use it (`make test`, `make lint`, `make ci`, …; `make help` lists all)
 or call pytest directly, whichever you prefer. Override the interpreter with
 `make PYTHON=... <target>` and pass extra pytest flags via `ARGS="..."`.
+Target *names* (not their pytest implementation) follow the cross-repo
+convention in [DV_STANDARDS.md](DV_STANDARDS.md), shared with this
+maintainer's other RTL/DV repos.
 
 | Old Make target | pytest command | Marker | Skips when… |
 |---|---|---|---|
@@ -242,6 +245,7 @@ or call pytest directly, whichever you prefer. Override the interpreter with
 | `make test-write-read` | `pytest tests/test_functional.py -k write_read` | `sim` | — |
 | `make test-random` | `pytest tests/test_functional.py -k random` | `sim` | — |
 | `make test-walking` | `pytest tests/test_functional.py -k walking` | `sim` | — |
+| `make sim` / `make cocotb` | `pytest -m sim` (aliases for `test`) | `sim` | — |
 | `make lp` | `pytest -m lp` | `lp` | — |
 | `make lint` | `pytest -m lint` | `lint` | Verilator part skips w/o Verilator |
 | `make coverage` | `pytest -m coverage` | `coverage` | whole gate skips w/o Verilator |
