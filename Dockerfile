@@ -49,13 +49,22 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir \
         "cocotb==${COCOTB_VERSION}" "pyuvm==${PYUVM_VERSION}" cocotb_coverage pytest
 
+# This repo's Makefile hardcodes `PYTHON ?= /usr/bin/python3` (a system
+# interpreter that has neither cocotb nor pytest), not a PATH-resolved
+# `python3` -- so putting the venv first on PATH (above) doesn't reach it.
+# `?=` only fires when the variable isn't already set from any source,
+# and an inherited environment variable counts as already set, so exporting
+# PYTHON here makes every `make` invocation use the venv interpreter without
+# touching the repo's own Makefile default.
+ENV PYTHON=/opt/venv/bin/python3
+
 WORKDIR /work
 COPY . /work
 
 # Fail fast if the toolchain didn't assemble correctly.
 RUN iverilog -V | head -1 \
     && verilator --version \
-    && python -c "import cocotb, pyuvm, cocotb_coverage; print('cocotb', cocotb.__version__, 'pyuvm', pyuvm.__version__)"
+    && "$PYTHON" -c "import cocotb, pyuvm, cocotb_coverage; print('cocotb', cocotb.__version__, 'pyuvm', pyuvm.__version__)"
 
 # Default: the standard light local gate (see DV_STANDARDS.md). Override the
 # command to run a different target, e.g. `docker run --rm <repo> make ci`.
