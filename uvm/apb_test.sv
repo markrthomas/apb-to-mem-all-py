@@ -28,9 +28,10 @@ class apb_base_test extends uvm_test;
     endfunction
 
     // Sequence run by this test; overridden by the derived tests. The default
-    // (base) test runs the write-read sequence.
+    // (base) test runs the random sequence (64 transactions, >= the 5-txn
+    // floor), matching the cocotb/pyuvm flow's random-by-default convention.
     virtual function uvm_sequence #(apb_seq_item) create_seq();
-        apb_write_read_seq seq = apb_write_read_seq::type_id::create("seq");
+        apb_random_seq seq = apb_random_seq::type_id::create("seq");
         return seq;
     endfunction
 

@@ -55,7 +55,7 @@ endef
 
 # One --binary build; the top selects the test at run time via +UVM_TESTNAME.
 # `build` is phony but make runs it once per invocation, so `make all` builds once.
-all: write_read random walking
+all: random write_read walking
 
 build:
 	$(build)
