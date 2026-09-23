@@ -23,7 +23,7 @@ V=~/verilator/bin/verilator ; U=~/verilator/test_regress/t/uvm
 ( unset VERILATOR_ROOT; make -C uvm/vlt lint       VERILATOR=$V UVM_HOME=$U )  # RAM-safe (~290 MB)
 ( unset VERILATOR_ROOT; make -C uvm/vlt write_read  VERILATOR=$V UVM_HOME=$U )  # build + run
 ```
-Targets: `lint`; `write_read` (default), `random`, `walking`, `all`; `clean`.
+Targets: `lint`; `random` (default), `write_read`, `walking`, `all`; `clean`.
 One `--binary` build serves all three tests (selected via `+UVM_TESTNAME`).
 
 ## RAM note — build in CI, not on a small box

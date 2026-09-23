@@ -394,8 +394,10 @@ package apb_pkg;
                 `uvm_fatal("NOVIF", "no virtual interface set for apb_base_test")
         endfunction
 
+        // Default (base) test runs the random sequence (64 transactions,
+        // >= the 5-txn floor); derived tests below override this.
         virtual function uvm_sequence #(apb_seq_item) create_seq();
-            apb_write_read_seq seq = apb_write_read_seq::type_id::create("seq");
+            apb_random_seq seq = apb_random_seq::type_id::create("seq");
             return seq;
         endfunction
 
@@ -489,9 +491,10 @@ module apb_tb_top;
 
     initial begin
         uvm_config_db#(virtual apb_if)::set(null, "*", "vif", apb);
-        // Default to the write-read test; +UVM_TESTNAME overrides it when given
-        // (so it "just runs" on EDA Playground with no run-option set).
-        run_test("apb_write_read_test");
+        // Default to the random test (64 transactions, >= the 5-txn floor);
+        // +UVM_TESTNAME overrides it when given (so it "just runs" on EDA
+        // Playground with no run-option set).
+        run_test("apb_random_test");
     end
 
 `ifdef DUMP

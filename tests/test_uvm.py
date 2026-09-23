@@ -5,7 +5,9 @@ Questa). None is licensed on this host, so — exactly like the source Makefile 
 this test DEGRADES GRACEFULLY: it detects an available simulator and, finding
 none, skips. On a licensed host it runs the multi-file TB for real.
 
-Select the UVM test with the UVM_TEST env var (default apb_write_read_test).
+Select the UVM test with the UVM_TEST env var (default apb_random_test, matching
+the cocotb/pyuvm flow's random-by-default convention — 64 transactions, well
+above the 5-transaction floor).
 """
 
 import os
@@ -20,7 +22,7 @@ pytestmark = pytest.mark.uvm
 
 UVM = REPO / "uvm"
 RTL = REPO / "rtl" / "apb_mem.sv"
-UVM_TEST = os.environ.get("UVM_TEST", "apb_write_read_test")
+UVM_TEST = os.environ.get("UVM_TEST", "apb_random_test")
 
 # Multi-file compile order (matches uvm/Makefile MULTI_SRC): interface, DUT,
 # assertion checker, package, top.
