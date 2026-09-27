@@ -113,15 +113,16 @@ waves:
 	$(PYTEST) $(FUNC) $(if $(TEST),-k $(TEST),) --waves $(ARGS)
 
 # Regenerate a fresh dump for one testcase and open it in GTKWave with the
-# curated layout. Skips cleanly if GTKWave is not installed. Defaults to the
-# random test when TEST is not given (`make wave`); override with TEST=<name>.
+# curated layout, zoomed to fit the whole test (tb/zoom_full.tcl). Skips cleanly
+# if GTKWave is not installed. Defaults to the random test when TEST is not given
+# (`make wave`); override with TEST=<name>.
 WAVE_TEST := $(if $(TEST),$(TEST),random_test)
 
 wave:
 	$(PYTEST) $(FUNC) -k $(WAVE_TEST) --waves $(ARGS)
 	@if command -v gtkwave >/dev/null 2>&1; then \
 		echo "[WAVE] opening tests/sim_build/$(WAVE_TEST)/apb_mem.fst"; \
-		exec gtkwave tests/sim_build/$(WAVE_TEST)/apb_mem.fst tb/apb_mem.gtkw; \
+		exec gtkwave -S tb/zoom_full.tcl tests/sim_build/$(WAVE_TEST)/apb_mem.fst tb/apb_mem.gtkw; \
 	else \
 		echo "[WAVE] gtkwave not on PATH — dump is at tests/sim_build/$(WAVE_TEST)/apb_mem.fst"; \
 	fi
