@@ -39,6 +39,8 @@ help:
 	@echo "    make lp                  # pytest -m lp  (low-power UPF demo)"
 	@echo "    make lint                # pytest -m lint  (iverilog + verilator)"
 	@echo "    make coverage            # pytest -m coverage  (verilator floor)"
+	@echo "    make formal              # formal tier (n/a stub if none)"
+	@echo "    make stress              # stress / randomized simulation (n/a stub if none)"
 	@echo "    make uvm                 # pytest -m uvm  (skips w/o a UVM sim)"
 	@echo ""
 	@echo "  Aggregates:"
@@ -134,3 +136,9 @@ clean:
 		.pytest_cache tests/__pycache__ tb/__pycache__ lp/__pycache__ \
 		uvm/simv uvm/simv.daidir uvm/csrc uvm/*.log
 	@echo "[CLEAN] removed build/sim/coverage artifacts"
+
+# Standard DV targets (DV_STANDARDS.md)
+.PHONY: stress formal
+stress: test-random
+formal:
+	@echo "[FORMAL] n/a: no formal tier in this repo yet (see DV_STANDARDS.md)"
