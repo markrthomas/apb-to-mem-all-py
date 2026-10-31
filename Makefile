@@ -54,6 +54,9 @@ help:
 	@echo "    make clean               # remove build/sim/coverage artifacts"
 	@echo ""
 	@echo "  Vars: PYTHON=$(PYTHON)  TEST=<testcase>  ARGS=<extra pytest flags>"
+	@echo "  swarm      Swarm A (verification) via Claude Code; swarm-rr = Swarm B (random regression); swarm-dry = show the command"
+	@echo "  batch      the Railway batch (docker/entrypoint.sh ci); board = swarm status; heavy T=<t> = one heavy target at a time"
+	@echo "  swarm-profile / swarm-kit-check   print .claude/swarm.env / check kit drift (shared kit: markrthomas/dv-swarm-kit)"
 
 # --- functional --------------------------------------------------------------
 
@@ -142,3 +145,6 @@ clean:
 stress: test-random
 formal:
 	@echo "[FORMAL] n/a: no formal tier in this repo yet (see DV_STANDARDS.md)"
+
+# shared swarm/infra targets (markrthomas/dv-swarm-kit)
+include swarm.mk
