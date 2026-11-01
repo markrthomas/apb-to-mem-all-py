@@ -29,3 +29,5 @@ uvm/xcelium.d/
 uvm/xrun.history
 uvm/work/
 uvm/transcript
+/tests/random/runs/
+/docker/last-run-metrics.json
